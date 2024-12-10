@@ -66,3 +66,9 @@ services:
       - ./images/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - thumbor
+  angular-app:
+    build:
+      context: ./one-citation/
+      dockerfile: Dockerfile
+    ports:
+      - "8090:80"
