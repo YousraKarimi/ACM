@@ -1,0 +1,21 @@
+_format_version: "2.1"
+_transform: true
+
+services:
+- name: citation
+  url: http://localhost:8080/one-citation
+  plugins:
+  - name: key-auth
+  routes:
+  - name: citation
+    paths:
+    - /citation
+
+consumers:
+- username: writer
+  keyauth_credentials:
+  - key: writer
+- username: moderator
+  keyauth_credentials:
+    - key: moderator
+
