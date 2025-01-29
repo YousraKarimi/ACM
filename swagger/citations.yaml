@@ -156,7 +156,7 @@ paths:
       summary: Valide une citation
       description: Valide une citation en passant l'ID et l'utilisateur validateur dans le corps de la requête.
       security:
-        - oAuthSample: []  # JWT requis
+        - oAuthSample: [profile]
       requestBody:
         required: true
         content:

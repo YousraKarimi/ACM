@@ -7,15 +7,12 @@ import org.gso.citations_api.service.CitationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-
-
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -30,8 +27,6 @@ import java.util.Map;
 
 public class CitationController {
     public static final String PATH = "/api/v1/citations";
-    public static int MAX_PAGE_SIZE = 200;
-    private QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
 
     public CitationController(CitationService citationService) {
         this.citationService = citationService;
@@ -41,34 +36,63 @@ public class CitationController {
     @Autowired
     private CitationService citationService;
 
-    // Endpoint pour lire une citation validée
+    // Endpoint pour lire les citations validées
     @GetMapping("/random")
     public CitationDto getRandomValidatedCitation() {
         return citationService.getRandomValidatedCitation();
     }
 
-    // Endpoint pour soumettre une citation (rôle: writer)
+
     @PostMapping("/submit")
-    @PreAuthorize("hasAuthority('ROLE_writer')")
-    public CitationDto submitCitation(@RequestBody CitationDto citationDto) {
-        return citationService.submitCitation(citationDto, citationDto.getSubmittedBy());
+    public ResponseEntity<CitationDto> submitCitation(@RequestBody CitationDto citationDto, Authentication authentication) {
+        log.info("User Authorities: {}", authentication.getAuthorities());
+
+        if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("writer"))) {
+            throw new AccessDeniedException("Forbidden");
+        }
+
+        CitationDto createdCitation = citationService.submitCitation(citationDto, authentication.getName());
+
+        return ResponseEntity
+                .created(
+                        ServletUriComponentsBuilder.fromCurrentContextPath()
+                                .path("/api/v1/citations/{id}")
+                                .buildAndExpand(createdCitation.getId())
+                                .toUri()
+                ).body(createdCitation);
     }
 
-    // Endpoint pour récupérer les citations non validées (rôle: moderator)
+
+
     @GetMapping("/pending")
-    @PreAuthorize("hasAuthority('ROLE_moderator')")
-    public List<CitationDto> getPendingCitations() {
-        return citationService.getPendingCitations();
+    public ResponseEntity<List<CitationDto>> getPendingCitations(Authentication authentication) {
+        log.info("User Authorities: {}", authentication.getAuthorities());
+
+        // Vérification explicite du rôle moderator
+        if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("moderator"))) {
+            throw new AccessDeniedException("Forbidden");
+        }
+
+        List<CitationDto> pendingCitations = citationService.getPendingCitations();
+        return ResponseEntity.ok(pendingCitations);
     }
 
-    // Endpoint pour valider une citation (rôle: moderator)
     @PostMapping("/validate")
-    @PreAuthorize("hasAuthority('ROLE_moderator')")
-    public CitationDto validateCitation(@RequestBody Map<String, String> requestBody) {
+    public ResponseEntity<CitationDto> validateCitation(@RequestBody Map<String, String> requestBody, Authentication authentication) {
+        log.info("User Authorities: {}", authentication.getAuthorities());
+
+        // Vérification explicite du rôle
+        if (!authentication.getAuthorities().contains(new SimpleGrantedAuthority("moderator"))) {
+            throw new AccessDeniedException("Forbidden");
+        }
+
         String id = requestBody.get("id");
-        String validatedBy = requestBody.get("validatedBy");
-        log.info("Request received: {}", requestBody);
-        return citationService.validateCitation(id, validatedBy);
+        String validatedBy = authentication.getName();
+
+        // Validation de la citation
+        CitationDto validatedCitation = citationService.validateCitation(id, validatedBy);
+
+        return ResponseEntity.ok(validatedCitation);
     }
 
 

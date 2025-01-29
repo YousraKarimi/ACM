@@ -43,6 +43,7 @@ public class CitationService {
         return citation.toDto();
     }
 
+
     // Récupérer toutes les citations en attente
     public List<CitationDto> getPendingCitations() {
         List<Citation> pendingCitations = citationRepository.findByStatus(CitationStatus.PENDING);
