@@ -1,0 +1,49 @@
+_format_version: "2.1"
+_transform: true
+
+services:
+  - name: profiles
+    url: http://localhost:9080/api/v1
+    routes:
+      - name: current
+        paths:
+          - /profiles
+  - name: citations
+    url: http://localhost:9081/api/v1
+    routes:
+      - name: random
+        paths:
+          - /citations
+
+  - name: images
+    url: http://localhost:8070
+    routes:
+      - name: random
+        paths:
+          - /random-image
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - http://localhost:8888
+      methods:
+        - GET
+        - POST
+        - DELETE
+        - PATCH
+        - PUT
+      headers:
+        - Accept
+        - Authorization
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - Access-Control-Allow-Origin
+        - X-Auth-Token
+      exposed_headers:
+        - X-Auth-Token
+      credentials: true
+      max_age: 3600
