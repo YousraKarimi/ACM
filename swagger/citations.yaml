@@ -4,7 +4,7 @@ info:
   description: Notre super API pour notre application de gestions des citations
   version: 1.0.0
 servers:
-  - url: http://localhost:9080/api/v1
+  - url: http://localhost:9081/api/v1
     description: Environnement de test Docker
   - url: http://localhost:9090/api/v1
     description: Environnement de test local
@@ -20,10 +20,53 @@ components:
           scopes:
             profile: access profile
             email: access email
-security: 
-  - oAuthSample: 
-    - profile
-    - email
+  schemas:
+    ProfileDto:
+      type: object
+      properties:
+        userId:
+          type: string
+        mail:
+          type: string
+          format: email
+        age:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        created:
+          type: string
+          format: date
+        modified:
+          type: string
+          format: date
+    CitationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        author:
+          type: string
+        submittedBy:
+          type: string
+        submittedDate:
+          type: string
+          format: date
+        validatedBy:
+          type: string
+        validatedDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+            - pending
+            - validated
+security:
+  - oAuthSample: []
 paths:
   /profiles/current:
     get:
@@ -38,4 +81,109 @@ paths:
                 properties:
                   name:
                     type: string
-                    
+
+  /profiles:
+    post:
+      summary: Crée un nouveau profil utilisateur
+      security:
+        - oAuthSample: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileDto'
+      responses:
+        '201':
+          description: Profil créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileDto'
+        '400':
+          description: Erreur de validation des données
+  /citations/random:
+    get:
+      summary: Récupère une citation validée aléatoire
+      responses:
+        '200':
+          description: Une citation validée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitationDto'
+
+  /citations/submit:
+    post:
+      summary: Soumet une nouvelle citation
+      security:
+        - oAuthSample: [profile]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CitationDto'
+      responses:
+        '201':
+          description: Citation soumise avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitationDto'
+        '403':
+          description: Accès interdit (l'utilisateur n'a pas le rôle writer)
+
+  /citations/pending:
+    get:
+      summary: Récupère les citations en attente de validation
+      security:
+        - oAuthSample: [profile]
+      responses:
+        '200':
+          description: Liste des citations en attente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CitationDto'
+        '403':
+          description: Accès interdit (l'utilisateur n'a pas le rôle moderator)
+
+  /citations/validate:
+    post:
+      summary: Valide une citation
+      description: Valide une citation en passant l'ID et l'utilisateur validateur dans le corps de la requête.
+      security:
+        - oAuthSample: []  # JWT requis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Identifiant de la citation à valider
+                validatedBy:
+                  type: string
+                  description: Nom de l'utilisateur validateur
+              required:
+                - id
+                - validatedBy
+      responses:
+        '200':
+          description: Citation validée avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CitationDto'
+        '403':
+          description: Accès interdit (l'utilisateur n'a pas le rôle moderator)
+        '404':
+          description: Citation non trouvée
+
+
+

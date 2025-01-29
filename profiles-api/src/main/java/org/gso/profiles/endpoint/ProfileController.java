@@ -49,8 +49,11 @@ public class ProfileController {
     private QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
 
     @PostMapping(consumes = { MediaType.APPLICATION_JSON_VALUE })
-    public ResponseEntity<ProfileDto> createProfile(@RequestBody ProfileDto profileDto) {
-        ProfileDto createdProdile = profileService.createProfile(profileDto.toModel()).toDto();
+    public ResponseEntity<ProfileDto> createProfile(@RequestBody ProfileDto profileDto,JwtAuthenticationToken principal) {
+        String userId = principal.getName();
+        ProfileModel profileModel = profileDto.toModel();
+        profileModel.setUserId(userId);
+        ProfileDto createdProdile = profileService.createProfile(profileModel).toDto();
         return ResponseEntity
                 .created(
                         ServletUriComponentsBuilder.fromCurrentContextPath()

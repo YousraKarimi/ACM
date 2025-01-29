@@ -1,7 +1,6 @@
 package org.gso.profiles.model;
 
-import java.time.LocalDateTime;
-
+import java.time.LocalDate;
 import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,9 +28,9 @@ public class ProfileModel {
     private String firstName;
     private String lastName;
     @CreatedDate
-    private LocalDateTime created;
+    private LocalDate created;
     @LastModifiedDate
-    private LocalDateTime modified;
+    private LocalDate modified;
 
     public ProfileDto toDto() {
         return ProfileDto.builder()
